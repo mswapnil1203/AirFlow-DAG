@@ -17,13 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from __future__ import print_function
+
+import time
 from builtins import range
-from datetime import timedelta
+from pprint import pprint
+
+from airflow.utils.dates import days_ago
 
 from airflow.models import DAG
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.utils.dates import days_ago
+from airflow.operators.python_operator import PythonOperator
 
 args = {
     'owner': 'Airflow',
@@ -31,44 +34,43 @@ args = {
 }
 
 dag = DAG(
-    dag_id='example_bash_operator',
+    dag_id='example_python_operator',
     default_args=args,
-    schedule_interval='0 0 * * *',
-    dagrun_timeout=timedelta(minutes=60),
+    schedule_interval=None,
     tags=['example']
 )
 
-run_this_last = DummyOperator(
-    task_id='run_this_last',
+
+# [START howto_operator_python]
+def print_context(ds, **kwargs):
+    pprint(kwargs)
+    print(ds)
+    return 'Whatever you return gets printed in the logs'
+
+
+run_this = PythonOperator(
+    task_id='print_the_context',
+    provide_context=True,
+    python_callable=print_context,
     dag=dag,
 )
+# [END howto_operator_python]
 
-# [START howto_operator_bash]
-run_this = BashOperator(
-    task_id='run_after_loop',
-    bash_command='echo 1',
-    dag=dag,
-)
-# [END howto_operator_bash]
 
-run_this >> run_this_last
+# [START howto_operator_python_kwargs]
+def my_sleeping_function(random_base):
+    """This is a function that will run within the DAG execution"""
+    time.sleep(random_base)
 
-for i in range(3):
-    task = BashOperator(
-        task_id='runme_' + str(i),
-        bash_command='echo "{{ task_instance_key_str }}" && sleep 900',
+
+# Generate 5 sleeping tasks, sleeping from 0.0 to 0.4 seconds respectively
+for i in range(5):
+    task = PythonOperator(
+        task_id='sleep_for_' + str(i),
+        python_callable=my_sleeping_function,
+        op_kwargs={'random_base': float(i) / 10},
         dag=dag,
     )
-    task >> run_this
 
-# [START howto_operator_bash_template]
-also_run_this = BashOperator(
-    task_id='also_run_this',
-    bash_command='echo "run_id={{ run_id }} | dag_run={{ dag_run }}"',
-    dag=dag,
-)
-# [END howto_operator_bash_template]
-also_run_this >> run_this_last
-
-if __name__ == "__main__":
-    dag.cli()
+    run_this >> task
+# [END howto_operator_python_kwargs]
