@@ -64,7 +64,7 @@ def my_sleeping_function(random_base):
 
 
 # Generate 5 sleeping tasks, sleeping from 0.0 to 0.4 seconds respectively
-for i in range(2):
+for i in range(4):
     task = PythonOperator(
         task_id='sleep_for_' + str(i),
         python_callable=my_sleeping_function,
