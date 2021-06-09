@@ -60,7 +60,7 @@ run_this = PythonOperator(
 # [START howto_operator_python_kwargs]
 def my_sleeping_function(random_base):
     """This is a function that will run within the DAG execution"""
-    time.sleep(300)
+    time.sleep(100)
 
 
 # Generate 5 sleeping tasks, sleeping from 0.0 to 0.4 seconds respectively
