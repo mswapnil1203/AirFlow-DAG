@@ -15,7 +15,7 @@ args = {
 }
 
 dag = DAG(
-    dag_id='new_operator_version',
+    dag_id='new_op_version',
     default_args=args,
     schedule_interval=None,
     tags=['example']
